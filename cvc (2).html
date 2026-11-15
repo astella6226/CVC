@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>護理小尖兵 🧚‍♀️ CVC 照護特訓班</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fdf2f8; /* pink-50 */
+            scroll-behavior: smooth;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .bounce-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .item-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .item-card.selected {
+            background-color: #fce7f3; /* pink-100 */
+            border-color: #ec4899; /* pink-500 */
+            transform: scale(0.98);
+        }
+        .item-card.selected .check-icon {
+            opacity: 1;
+            transform: scale(1);
+        }
+        /* Flashcard flip effect */
+        .flip-card {
+            background-color: transparent;
+            width: 100%;
+            height: 200px;
+            perspective: 1000px;
+            cursor: pointer;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .flip-card-front {
+            background-color: white;
+            color: #1f2937;
+        }
+        .flip-card-back {
+            background-color: #ec4899;
+            color: white;
+            transform: rotateY(180deg);
+        }
+        
+        /* --- 新增：遊戲特效與動畫 --- */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+        }
+        .damage-text {
+            position: absolute;
+            color: #ef4444; /* red-500 */
+            font-weight: 900;
+            font-size: 2rem;
+            text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+            z-index: 50;
+        }
+        .hp-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .hp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f97316);
+            transition: width 0.3s ease-out;
+        }
+        .boss-sprite {
+            font-size: 6rem;
+            transition: all 0.2s;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2));
+        }
+        /* --- 新增結束 --- */
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fdf2f8; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #fbcfe8; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #f472b6; 
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 glass-panel border-b border-pink-100 px-4 py-3">
+        <div class="max-w-4xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2 text-pink-600 font-bold text-xl">
+                <i class="fa-solid fa-user-nurse text-2xl"></i>
+                <span>護理小尖兵的 CVC 教室</span>
+            </div>
+            <div class="hidden sm:flex gap-4 text-sm font-medium text-gray-600">
+                <a href="#mission1" class="hover:text-pink-500 transition">🎒 裝備大點兵</a>
+                <a href="#mission2" class="hover:text-pink-500 transition">✨ 魔法護理步驟</a>
+                <a href="#mission3" class="hover:text-pink-500 transition">📝 隨堂考</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-24 pb-12 px-4 max-w-4xl mx-auto text-center">
+        <div class="inline-block p-4 bg-white rounded-full shadow-lg text-5xl mb-4 animate-bounce">
+            🧚‍♀️
+        </div>
+        <h1 class="text-3xl sm:text-5xl font-black text-gray-800 mb-4 tracking-tight">
+            嗨，學弟妹！歡迎來到 <span class="text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400">CVC 特訓班</span> 🚀
+        </h1>
+        <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">
+            中心靜脈導管（CVC）看起來管路很多很可怕？別擔心！跟著我一起闖關，把 SOP 變成你的肌肉記憶。<br>
+            不用死背，我們用玩的！準備好接招了嗎？✨
+        </p>
+        <a href="#mission1" class="bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-pink-300/50 hover:scale-105 transition-all duration-300 inline-flex items-center gap-2">
+            開始闖關 <i class="fa-solid fa-arrow-down"></i>
+        </a>
+    </header>
+
+    <!-- Mission 1: 用物準備 -->
+    <section id="mission1" class="py-12 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl">
+                <div class="flex items-center gap-3 mb-2">
+                    <span class="bg-pink-100 text-pink-600 font-bold px-3 py-1 rounded-full text-sm">Mission 1</span>
+                    <h2 class="text-2xl font-bold">裝備大點兵 🎒</h2>
+                </div>
+                <p class="text-gray-600 mb-6">「工欲善其事，必先利其器！」醫生說要 set CVC，學姐請你準備用物，請點擊正確的物品放進你的護理車吧！（提示：請找出 6 樣必需品）</p>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="items-grid">
+                    <!-- Items generated by JS -->
+                </div>
+
+                <div class="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-100 hidden" id="mission1-success">
+                    <div class="flex items-start gap-3">
+                        <div class="text-2xl">🎉</div>
+                        <div>
+                            <h3 class="font-bold text-blue-800">太讚了吧！完全正確！</h3>
+                            <p class="text-sm text-blue-600 mt-1">記得執行前要先對病人做「二種以上病人辨識」，還要留意隱私拉上圍簾喔！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission 2: 魔法護理步驟 (翻翻卡) -->
+    <section id="mission2" class="py-12 px-4 bg-white">
+        <div class="max-w-4xl mx-auto">
+            <div class="flex items-center gap-3 mb-8">
+                <span class="bg-blue-100 text-blue-600 font-bold px-3 py-1 rounded-full text-sm">Mission 2</span>
+                <h2 class="text-2xl font-bold">魔法護理步驟 ✨</h2>
+            </div>
+            <p class="text-gray-600 mb-8">點擊卡片翻面，揭開 CVC 照護的關鍵密碼！</p>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <!-- Card 1 -->
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front border-2 border-gray-100">
+                            <div class="text-4xl mb-3">📅</div>
+                            <h3 class="text-xl font-bold">CVC 換藥時機</h3>
+                            <p class="text-sm text-gray-500 mt-2">點擊翻牌看解答</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-blue-400 to-indigo-500">
+                            <h3 class="text-xl font-bold mb-2">Tegaderm 每 5-7 天更換</h3>
+                            <p class="text-sm">若使用紗布覆蓋，則是每 2 天更換喔！</p>
+                            <p class="text-xs mt-2 opacity-80">※ 脫落、潮濕、滲血時應立即更換</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front border-2 border-gray-100">
+                            <div class="text-4xl mb-3">🧼</div>
+                            <h3 class="text-xl font-bold">最強消毒液</h3>
+                            <p class="text-sm text-gray-500 mt-2">點擊翻牌看解答</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-pink-400 to-rose-500">
+                            <h3 class="text-xl font-bold mb-2">2% CHG</h3>
+                            <p class="text-sm">Chlorhexidine gluconate<br>由中心向外環狀消毒，範圍要大於敷料覆蓋範圍！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front border-2 border-gray-100">
+                            <div class="text-4xl mb-3">🌊</div>
+                            <h3 class="text-xl font-bold">沖洗管路技巧</h3>
+                            <p class="text-sm text-gray-500 mt-2">點擊翻牌看解答</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-green-400 to-emerald-500">
+                            <h3 class="text-xl font-bold mb-2">脈衝式沖洗法</h3>
+                            <p class="text-sm">口訣：「推-停-推-停」</p>
+                            <p class="text-xs mt-1">最後要正壓封管 (先關夾再移除注射器)，才不會血液逆流阻塞喔！</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front border-2 border-gray-100">
+                            <div class="text-4xl mb-3">🚫</div>
+                            <h3 class="text-xl font-bold">絕對 NG 行為！</h3>
+                            <p class="text-sm text-gray-500 mt-2">點擊翻牌看解答</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-red-400 to-rose-600">
+                            <h3 class="text-xl font-bold mb-2">導管滑出怎麼辦？</h3>
+                            <p class="text-sm">若已暴露在外的導管，<br><b>絕對不可以</b>再往內推！</p>
+                            <div class="mt-3 text-xs bg-white/20 px-3 py-1 rounded-full">💡 預防血流感染，請直接報告醫師處理！</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5 (新增：管路更換) -->
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front border-2 border-gray-100">
+                            <div class="text-4xl mb-3">⏳</div>
+                            <h3 class="text-xl font-bold">管路更換時機</h3>
+                            <p class="text-sm text-gray-500 mt-2">點擊翻牌看解答</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-purple-400 to-fuchsia-500">
+                            <h3 class="text-xl font-bold mb-2">依輸液種類而定</h3>
+                            <p class="text-sm">一般注射管路：72-96小時<br>Propofol (脂質)：每 12 小時<br>血液及脂肪製品：24 小時內</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6 (新增：多重管路標示) -->
+                <div class="flip-card" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front border-2 border-gray-100">
+                            <div class="text-4xl mb-3">🏷️</div>
+                            <h3 class="text-xl font-bold">多重管路防呆</h3>
+                            <p class="text-sm text-gray-500 mt-2">點擊翻牌看解答</p>
+                        </div>
+                        <div class="flip-card-back bg-gradient-to-br from-amber-400 to-orange-500">
+                            <h3 class="text-xl font-bold mb-2">清楚標示是關鍵</h3>
+                            <p class="text-sm">使用 ≥2 條輸液管路 (如 2WAY CVC) 時，<br><b>輸液瓶、PUMP 及病人端</b><br>皆需清楚標示藥物名稱，防止錯接！</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Mission 3: 隨堂考 (升級為魔王戰) -->
+    <section id="mission3" class="py-12 px-4 bg-gray-900 text-white rounded-t-[3rem] mt-12 relative overflow-hidden">
+        <!-- 裝飾背景 -->
+        <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+        
+        <div class="max-w-3xl mx-auto relative z-10">
+            <div class="text-center mb-8">
+                <span class="bg-red-500/20 text-red-400 font-bold px-4 py-1.5 rounded-full text-sm border border-red-500/30">Final Stage</span>
+                <h2 class="text-3xl font-black mt-4 text-transparent bg-clip-text bg-gradient-to-r from-red-400 to-yellow-300">打擊血流感染大魔王 👾</h2>
+                <p class="text-gray-400 mt-2">用你的 SOP 知識當作武器，擊敗威脅病人的感染源！</p>
+            </div>
+            
+            <!-- 戰鬥畫面 -->
+            <div class="bg-gray-800 rounded-3xl p-6 sm:p-8 border-4 border-gray-700 shadow-2xl relative">
+                
+                <!-- 魔王區 -->
+                <div class="flex flex-col items-center mb-8 relative" id="boss-area">
+                    <div class="text-xl font-bold text-red-400 mb-2">🦠 CRBSI 感染魔王</div>
+                    <div class="hp-bar-container w-full max-w-md mb-4 border-2 border-gray-900">
+                        <div class="hp-bar-fill" id="boss-hp" style="width: 100%;"></div>
+                    </div>
+                    <div class="boss-sprite animate-bounce mt-4" id="boss-image">😈</div>
+                </div>
+
+                <!-- 對話框 (問題) -->
+                <div class="bg-gray-900 border-2 border-gray-600 rounded-xl p-5 mb-6 relative">
+                    <div class="absolute -top-3 left-6 bg-blue-500 text-xs font-bold px-2 py-1 rounded">系統提示</div>
+                    <p id="battle-question" class="text-lg font-medium leading-relaxed min-h-[60px] flex items-center">
+                        野生的大魔王出現了！學弟妹，準備好接招了嗎？
+                    </p>
+                </div>
+
+                <!-- 選項按鈕區 -->
+                <div id="battle-options" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <button class="battle-btn bg-gray-700 hover:bg-gray-600 border border-gray-500 rounded-lg p-4 text-left transition-all duration-200" onclick="startGame()">
+                        ⚔️ 開始戰鬥！
+                    </button>
+                </div>
+
+                <!-- 戰鬥回饋 -->
+                <div id="battle-feedback" class="mt-6 text-center font-bold text-lg h-8 text-yellow-400">
+                    <!-- 回饋文字顯示區 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 text-gray-500 text-sm bg-gray-900">
+        <p>護理小尖兵關心您的臨床生活 💖 依據中國醫藥大學附設醫院 SOP (SOP-1N00-NTA34) 客製化設計</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Mission 1: Interactive Checklist
+        const items = [
+            { id: 'chg', name: '2% CHG 消毒液', icon: '🧴', correct: true },
+            { id: 'tegaderm', name: 'Tegaderm (大)', icon: '🩹', correct: true },
+            { id: 'barrier', name: '最大無菌防護裝備', icon: '🥼', correct: true },
+            { id: 'cvcset', name: '中心靜脈導管組', icon: '💉', correct: true },
+            { id: 'xylo', name: '2% Xylocaine', icon: '🧪', correct: true },
+            { id: 'suture', name: '簡易縫合包與縫線', icon: '🧵', correct: true },
+            { id: 'coffee', name: '學姐的冰咖啡', icon: '☕', correct: false },
+            { id: 'phone', name: '滑手機', icon: '📱', correct: false }
+        ];
+
+        const grid = document.getElementById('items-grid');
+        let selectedItems = new Set();
+        const correctRequired = items.filter(i => i.correct).map(i => i.id);
+
+        items.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'item-card bg-white border-2 border-transparent p-4 rounded-2xl shadow-sm text-center relative flex flex-col items-center justify-center min-h-[120px]';
+            el.innerHTML = `
+                <div class="text-3xl mb-2">${item.icon}</div>
+                <div class="font-medium text-sm text-gray-700">${item.name}</div>
+                <div class="check-icon absolute top-2 right-2 text-pink-500 opacity-0 transform scale-50 transition-all duration-300">
+                    <i class="fa-solid fa-circle-check text-xl"></i>
+                </div>
+            `;
+            
+            el.addEventListener('click', () => {
+                if (selectedItems.has(item.id)) {
+                    selectedItems.delete(item.id);
+                    el.classList.remove('selected');
+                } else {
+                    selectedItems.add(item.id);
+                    el.classList.add('selected');
+                }
+                checkMission1();
+            });
+            grid.appendChild(el);
+        });
+
+        function checkMission1() {
+            // Check if all correct items are selected and NO incorrect items are selected
+            const hasAllCorrect = correctRequired.every(id => selectedItems.has(id));
+            const hasIncorrect = [...selectedItems].some(id => !correctRequired.includes(id));
+            
+            const successMsg = document.getElementById('mission1-success');
+            if (hasAllCorrect && !hasIncorrect) {
+                successMsg.classList.remove('hidden');
+                successMsg.classList.add('animate-bounce');
+                setTimeout(() => successMsg.classList.remove('animate-bounce'), 1000);
+            } else {
+                successMsg.classList.add('hidden');
+            }
+        }
+
+        // --- Mission 3: RPG Boss Battle Logic ---
+        const bossMaxHp = 100;
+        let currentBossHp = bossMaxHp;
+        let currentQuestionIndex = 0;
+
+        const battleQuestions = [
+            {
+                q: "魔王準備在醫師植入 CVC 時大舉入侵！\n為了達到 SOP 規定的「最大無菌防護」，你該準備什麼？",
+                options: [
+                    { text: "只要提醒醫師戴無菌手套跟一般口罩就好", correct: false, msg: "防護力太低！魔王輕易突破防線！" },
+                    { text: "醫師需穿戴髮帽、口罩、無菌隔離衣與手套，病人需從頭到腳全身覆蓋", correct: true, msg: "完美防禦！最大無菌防護 (Maximal sterile barrier) 成功阻擋細菌！" }
+                ]
+            },
+            {
+                q: "魔王發動攻擊：「我要從導管口跑進去啦！」\n你該用什麼來進行皮膚消毒防禦？",
+                options: [
+                    { text: "10% 優碘 (Povidone-iodine)", correct: false, msg: "魔王覺得優碘乾太慢，防禦失敗！" },
+                    { text: "2% CHG (Chlorhexidine)", correct: true, msg: "爆擊！2% CHG 殺菌效果好又持久！" },
+                    { text: "純水擦一擦就好", correct: false, msg: "魔王笑了，純水根本沒用啊！" }
+                ]
+            },
+            {
+                q: "魔王潛伏在「免針接頭」上！\n你要怎麼消毒才能徹底消滅它？",
+                options: [
+                    { text: "不用消毒，直接打藥", correct: false, msg: "大錯誤！把魔王直接推進血管裡了！" },
+                    { text: "酒精棉片輕碰1秒", correct: false, msg: "力道太弱！沒有摩擦 (Friction) 是殺不死魔王的！" },
+                    { text: "75% 酒精棉片用力摩擦 5-15 秒", correct: true, msg: "成功！確實摩擦，確保正面及側面均消毒！" }
+                ]
+            },
+            {
+                q: "緊急狀況！CVC 導管滑出了一小段，魔王趁虛而入！\n你該怎麼做？",
+                options: [
+                    { text: "趕快自己把導管推回去", correct: false, msg: "絕對NG！暴露在外的導管有細菌，推回去會引發血流感染！" },
+                    { text: "固定好現狀，立即通知醫師", correct: true, msg: "正確判斷！保護了病人的安全！" },
+                    { text: "當作沒看到，拿紗布蓋住", correct: false, msg: "掩耳盜鈴是沒用的，魔王會越來越強！" }
+                ]
+            },
+            {
+                q: "魔王想讓管路阻塞！\n學長請你沖洗管路 (Flush)，你該使用什麼技巧？",
+                options: [
+                    { text: "用力一口氣推到底", correct: false, msg: "太暴力了！可能會把血栓衝進去或弄破管路！" },
+                    { text: "「推-停-推-停」脈衝式沖洗", correct: true, msg: "完美連擊！脈衝式沖洗配合正壓封管，成功防禦！" }
+                ]
+            },
+            {
+                q: "魔王干擾了手術室的流程！\n在協助醫師植入 CVC 結束時，必須共同執行「Sign out」，請問下列哪一項是必須確認的？",
+                options: [
+                    { text: "只要確認導管有沒有塞進去就好", correct: false, msg: "太草率了！魔王會趁機留下異物在病人体內！" },
+                    { text: "確認 Guide wire 是否已移除、清點器械與紗布針頭數量正確", correct: true, msg: "完美防禦！確實清點，避免遺留異物！" }
+                ]
+            },
+            {
+                q: "魔王想趁你換藥時感染病人！\n你在拆除無菌 CD 碗並倒入 2% CHG 後，接下來消毒的正確手法是？",
+                options: [
+                    { text: "由外向內隨便擦一擦", correct: false, msg: "這樣會把外面的細菌帶到傷口中心！" },
+                    { text: "由中心向周圍環狀消毒，範圍須大於敷料覆蓋範圍", correct: true, msg: "完全正確！徹底消滅周圍的細菌魔王！" }
+                ]
+            }
+        ];
+
+        function startGame() {
+            currentBossHp = bossMaxHp;
+            currentQuestionIndex = 0;
+            updateHpBar();
+            document.getElementById('boss-image').innerText = '😈';
+            document.getElementById('boss-image').classList.remove('opacity-50');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= battleQuestions.length) {
+                winGame();
+                return;
+            }
+
+            const qData = battleQuestions[currentQuestionIndex];
+            document.getElementById('battle-question').innerText = qData.q;
+            document.getElementById('battle-feedback').innerText = "";
+            
+            const optionsContainer = document.getElementById('battle-options');
+            optionsContainer.innerHTML = ''; // Clear old buttons
+            
+            qData.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'battle-btn bg-gray-700 hover:bg-blue-600 border border-gray-500 rounded-lg p-4 text-left transition-all duration-200 transform hover:scale-105 active:scale-95';
+                btn.innerHTML = `<span class="text-gray-400 mr-2">${index + 1}.</span> ${opt.text}`;
+                btn.onclick = () => handleAnswer(opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function handleAnswer(option) {
+            const feedbackEl = document.getElementById('battle-feedback');
+            const bossImg = document.getElementById('boss-image');
+            const bossArea = document.getElementById('boss-area');
+            
+            // Disable buttons temporarily
+            const btns = document.querySelectorAll('.battle-btn');
+            btns.forEach(b => b.disabled = true);
+
+            if (option.correct) {
+                // 答對邏輯
+                feedbackEl.innerHTML = '✨ <span class="text-green-400">' + option.msg + '</span>';
+                
+                // 扣血 (平均分配每題的傷害)
+                const damage = bossMaxHp / battleQuestions.length;
+                currentBossHp -= damage;
+                updateHpBar();
+                
+                // 動畫與特效
+                bossImg.innerText = '😖';
+                bossImg.classList.add('animate-shake');
+                
+                // 飄浮傷害數字
+                const dmgText = document.createElement('div');
+                dmgText.innerText = '-' + damage;
+                dmgText.className = 'damage-text';
+                // 隨機位置
+                dmgText.style.left = '50%';
+                dmgText.style.top = '20%';
+                bossArea.appendChild(dmgText);
+
+                setTimeout(() => {
+                    bossImg.classList.remove('animate-shake');
+                    bossImg.innerText = '😈';
+                    dmgText.remove();
+                    currentQuestionIndex++;
+                    showQuestion();
+                }, 1500);
+
+            } else {
+                // 答錯邏輯
+                feedbackEl.innerHTML = '❌ <span class="text-red-400">' + option.msg + '</span>';
+                bossImg.innerText = '😂'; // 嘲笑
+                
+                // 畫面震動 (玩家受傷感)
+                document.getElementById('mission3').classList.add('animate-shake');
+                
+                setTimeout(() => {
+                    bossImg.innerText = '😈';
+                    document.getElementById('mission3').classList.remove('animate-shake');
+                    btns.forEach(b => b.disabled = false);
+                }, 1500);
+            }
+        }
+
+        function updateHpBar() {
+            const hpFill = document.getElementById('boss-hp');
+            hpFill.style.width = Math.max(0, currentBossHp) + '%';
+            if(currentBossHp < 40) {
+                hpFill.style.background = 'linear-gradient(90deg, #b91c1c, #ef4444)'; // 更紅
+            } else {
+                hpFill.style.background = 'linear-gradient(90deg, #ef4444, #f97316)'; // 恢復原本顏色
+            }
+        }
+
+        function winGame() {
+            document.getElementById('battle-question').innerText = "太神啦！你成功防禦了所有的感染威脅，病人安全過關！";
+            const optionsContainer = document.getElementById('battle-options');
+            optionsContainer.innerHTML = `
+                <button class="bg-pink-600 hover:bg-pink-500 border border-pink-400 rounded-lg p-4 text-center transition-all duration-200 font-bold col-span-1 sm:col-span-2 shadow-[0_0_15px_rgba(236,72,153,0.5)]" onclick="startGame()">
+                    🔄 再玩一次，鞏固記憶！
+                </button>
+            `;
+            
+            const bossImg = document.getElementById('boss-image');
+            bossImg.innerText = '👻'; // 死掉的鬼魂
+            bossImg.classList.add('opacity-50');
+            bossImg.classList.remove('animate-bounce');
+            
+            // Fix string quote syntax error here
+            document.getElementById('battle-feedback').innerHTML = '🌟 恭喜獲得成就：<span class="text-yellow-300">CVC 守護者</span>';
+            
+            // 慶祝特效 (簡單版)
+            const hpFill = document.getElementById('boss-hp');
+            hpFill.style.width = '0%';
+        }
+    </script>
+</body>
+</html>
